@@ -8,7 +8,7 @@ nb = pynetbox.api(
 
 app = Flask(__name__)
 
-@app.route('/', methods=['GET'])
+# @app.route('/', methods=['GET'])
 # def ipxe():
 #     args = request.args
 #     if 'asset_tag' in args:
@@ -19,6 +19,7 @@ app = Flask(__name__)
 #         return "Asset tag not found"
 #     return "No asset_tag in query string"
 
+@app.route('/', methods=['GET'])
 def ipxe():
     args = request.args
     if 'asset_tag' in args:
