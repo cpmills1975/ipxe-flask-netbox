@@ -1,19 +1,18 @@
-Create a NetBox config template called ipxe:
+Define one of more config context templates containing an attribute ipxe_lines
 
 ```
-#!ipxe
-
 kernel http://foo.bar/{{ device.platform.slug }}/vmlinuz
 initrd http://foo.bar/images/{{ device.platform.slug }}/initrd.img
-boot
 ```
+
+Apply this config context to candidate objects as appropriate.
 
 Build and run this container
 
 Retrieve the ipxe script:
 
 ```
-curl -X GET "http://localhost:8080?asset_tag=ABC123"
+curl -X GET "http://localhost:8080/ABC123"
 ```
 
 For development, run the flask app directly:

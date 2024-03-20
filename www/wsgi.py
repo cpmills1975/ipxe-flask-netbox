@@ -1,31 +1,45 @@
-from flask import Flask, request, render_template_string
+from flask import Flask, render_template, render_template_string
+from markupsafe import escape
 import pynetbox
 
 nb = pynetbox.api(
-    'https://demo.netbox.dev',
-    token='bdca56791a60d69dc36a10b7b61806a1569a6756'
+    "https://demo.netbox.dev", token="bdca56791a60d69dc36a10b7b61806a1569a6756"
 )
 
 app = Flask(__name__)
 
-# @app.route('/', methods=['GET'])
-# def ipxe():
-#     args = request.args
-#     if 'asset_tag' in args:
-#         print(f"Searching for {args['asset_tag']}")
-#         device = nb.dcim.devices.get(asset_tag__ic=args['asset_tag'])
-#         if device:
-#             return device.render_config.create()['content']
-#         return "Asset tag not found"
-#     return "No asset_tag in query string"
 
-@app.route('/', methods=['GET'])
-def ipxe():
-    args = request.args
-    if 'asset_tag' in args:
-        device = nb.dcim.devices.get(asset_tag__ic=args['asset_tag'])
-        template = nb.extras.config_templates.get(name='ipxe.j2').template_code
-        if device:
-            return render_template_string(template, device=device)
-        return "Asset tag not found"
-    return "No asset_tag in query string"
+@app.route("/")
+@app.route("/<serial>", methods=["GET"])
+def ipxe(serial=None):
+    if serial is not None:
+
+        # Try and fetch the device from NetBox - dealing with it not being
+        # found.
+        try:
+            device = nb.dcim.devices.get(serial__ic=serial)
+        except ValueError:
+            return f"Serial number '{escape(serial)}' not unique"
+
+        # Try and find the device's config_context - dealing with it being missubg
+        # or there being no config context at all
+        try:
+            ipxe_lines = device.config_context["ipxe_lines"]
+        except AttributeError:
+            return f"Device with serial number '{escape(serial)}' not found"
+        except KeyError:
+            return "No attribute 'ipxe_lines' found in device config context"
+
+        # Check ipxe_lines is a bona-fide list of strings and not just a single string
+        if str(ipxe_lines) == ipxe_lines:
+            # got a single string
+            ipxe_lines = [render_template_string(ipxe_lines, device=device)]
+        else:
+            # got list of ipxe_lines
+            ipxe_lines = [
+                render_template_string(line, device=device) for line in ipxe_lines
+            ]
+
+        return render_template("bootstrap.j2", lines="\n".join(ipxe_lines))
+
+    return "No serial number supplied"
