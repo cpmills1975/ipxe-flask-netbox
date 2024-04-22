@@ -18,16 +18,16 @@ def ipxe(serial=None):
         # found.
         try:
             device = nb.dcim.devices.get(serial__ic=serial)
-        except ValueError:
+        except ValueError:  # get() returns > 1 results
             return f"Serial number '{escape(serial)}' not unique"
 
         # Try and find the device's config_context - dealing with it being missubg
         # or there being no config context at all
         try:
             ipxe_lines = device.config_context["ipxe_lines"]
-        except AttributeError:
+        except AttributeError:  # device == None
             return f"Device with serial number '{escape(serial)}' not found"
-        except KeyError:
+        except KeyError:  # config context does not define ipxe_lines
             return "No attribute 'ipxe_lines' found in device config context"
 
         # Check ipxe_lines is a bona-fide list of strings and not just a single string
